@@ -1,0 +1,40 @@
+version: 0.2
+
+#region: global envs 
+env:
+  shell: shell-tag
+  variables:
+    AWS_TAG: "AWS_SCHOOL_CODE_PIPELINE_CONTEST"
+#endregion
+
+#region: tasks
+phases:
+  install:
+    runtime-versions:
+      go: latest
+  pre_build:
+    on-failure: ABORT
+    commands:
+      - echo pre-build... 
+      - go version
+      - go mod download
+  build:
+    on-failure: ABORT
+    commands:
+      - echo Build started on `date`
+      - go build
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo directory
+      - pwd
+#endregion
+
+artifacts:
+  files:
+    - go.mod
+    - go.sum
+
+cache:
+  paths:
+    - go.sum
