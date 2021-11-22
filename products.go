@@ -6,4 +6,14 @@ type Product struct {
 	Description string `json:"desc"`
 }
 
+type ResponseEntity struct {
+	Product Product `json:"product"`
+	TraceId string  `json:"traceId"`
+}
+
+type ResponseEntityAll struct {
+	Products []Product `json:"products"`
+	TraceId  string    `json:"traceId"`
+}
+
 var Products []Product
