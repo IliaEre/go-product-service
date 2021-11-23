@@ -33,13 +33,9 @@ func findOne(w http.ResponseWriter, r *http.Request) {
 		log.Println("problem with id...", err)
 	}
 
-	ctx := r.Context()
-	xrayTraceId := getXrayTraceID(trace.SpanFromContext(ctx))
-
 	for _, doc := range Products {
 		if int64(doc.Id) == key {
-			response := ResponseEntity{doc, xrayTraceId}
-			json.NewEncoder(w).Encode(response)
+			json.NewEncoder(w).Encode(doc)
 		}
 	}
 }
@@ -49,13 +45,11 @@ func create(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(requestBody, "Problem with body!")
 	}
-	ctx := r.Context()
-	xrayTraceID := getXrayTraceID(trace.SpanFromContext(ctx))
 
 	var product Product
 	json.Unmarshal(requestBody, &product)
 	Products = append(Products, product)
-	json.NewEncoder(w).Encode(ResponseEntity{product, xrayTraceID})
+	json.NewEncoder(w).Encode(product)
 }
 
 func handleRequests() {
