@@ -15,18 +15,15 @@ import (
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/gorilla/mux"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
-	"go.opentelemetry.io/otel/trace"
 )
 
 func findAll(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	xrayTraceId := getXrayTraceID(trace.SpanFromContext(ctx))
-
-	response := ResponseEntityAll{Products, xrayTraceId}
-	json.NewEncoder(w).Encode(response)
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(Products)
 }
 
 func findOne(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	key, err := strconv.ParseInt(vars["id"], 10, 32)
 	if err != nil {
@@ -49,6 +46,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 	var product Product
 	json.Unmarshal(requestBody, &product)
 	Products = append(Products, product)
+	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(product)
 }
 
@@ -59,9 +57,7 @@ func handleRequests() {
 
 	myRouter.Handle("/api/health", xray.Handler(xraySegment,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			xrayTraceID := getXrayTraceID(trace.SpanFromContext(ctx))
-			json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "traceId": xrayTraceID})
+			json.NewEncoder(w).Encode(map[string]interface{}{"ok": true})
 		})))
 
 	myRouter.Handle("/product/all", xray.Handler(xraySegment, http.HandlerFunc(findAll)))
@@ -91,10 +87,4 @@ func init() {
 func main() {
 	log.Println("init hander and start server")
 	handleRequests()
-}
-
-func getXrayTraceID(span trace.Span) string {
-	xrayTraceID := span.SpanContext().TraceID().String()
-	result := fmt.Sprintf("1-%s-%s", xrayTraceID[0:8], xrayTraceID[8:])
-	return result
 }
