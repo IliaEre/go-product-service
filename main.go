@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"os"
 	"strconv"
 
 	"fmt"
@@ -10,7 +9,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/aws/aws-xray-sdk-go/awsplugins/ec2"
 	"github.com/aws/aws-xray-sdk-go/strategy/sampling"
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/gorilla/mux"
@@ -74,11 +72,6 @@ func init() {
 	}
 
 	log.Println("init x-ray configudaration")
-	// ctx := context.Background()
-	if os.Getenv("ENVIRONMENT") == "production" {
-		ec2.Init()
-	}
-
 	s, _ := sampling.NewCentralizedStrategyWithFilePath("rules.json")
 	xray.Configure(xray.Config{SamplingStrategy: s})
 	log.Println("end of init")
