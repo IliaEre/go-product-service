@@ -18,14 +18,38 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 )
 
-// session
 var svc *dynamodb.DynamoDB
 var tableName = "Products"
 
 func findAll(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(Products)
+	out, err := svc.Query(&dynamodb.QueryInput{
+		TableName: aws.String(tableName),
+	})
+	if err != nil {
+		log.Fatalln("Failed to find products")
+	}
+
+	if out != nil {
+		w.Header().Add("Content-Type", "application/json")
+		var resultSet []Product
+		for _, element := range out.Items {
+			product := Product{}
+			err = dynamodbattribute.UnmarshalMap(element, &product)
+
+			if err != nil {
+				log.Fatalf("Got error unmarshalling: %s", err)
+			}
+			resultSet = append(resultSet, product)
+		}
+
+		json.NewEncoder(w).Encode(resultSet)
+
+	} else {
+		msg := "Could not find products"
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(msg))
+	}
 }
 
 func findOne(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +83,6 @@ func findOne(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Add("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(product)
-
 	}
 }
 
@@ -108,18 +131,11 @@ func handleRequests() {
 }
 
 func init() {
-	log.Println("init products")
-	Products = []Product{
-		{Id: 1, Name: "Useful smartphone", Description: "There is a description here..."},
-		{Id: 2, Name: "Useful laptop", Description: "khm..."},
-	}
-
 	log.Println("init x-ray configudaration")
 	s, _ := sampling.NewCentralizedStrategyWithFilePath("rules.json")
 	xray.Configure(xray.Config{SamplingStrategy: s})
 
 	log.Println("init dynamodb")
-	// config inside EC2
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 	}))

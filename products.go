@@ -5,5 +5,3 @@ type Product struct {
 	Name        string `json:"name"`
 	Description string `json:"desc"`
 }
-
-var Products []Product
