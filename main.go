@@ -2,36 +2,64 @@ package main
 
 import (
 	"encoding/json"
-	"strconv"
 
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-xray-sdk-go/strategy/sampling"
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/gorilla/mux"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 )
 
+// session
+var svc *dynamodb.DynamoDB
+var tableName = "Products"
+
 func findAll(w http.ResponseWriter, r *http.Request) {
+
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(Products)
 }
 
 func findOne(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "application/json")
 	vars := mux.Vars(r)
-	key, err := strconv.ParseInt(vars["id"], 10, 32)
+	id := vars["id"]
+	log.Println("Try to find product with id: ", id)
+
+	result, err := svc.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"Id": {
+				N: aws.String(id),
+			},
+		},
+	})
+
 	if err != nil {
-		log.Println("problem with id...", err)
+		log.Fatalf("Got error calling GetItem: %s", err)
 	}
 
-	for _, doc := range Products {
-		if int64(doc.Id) == key {
-			json.NewEncoder(w).Encode(doc)
+	if result.Item == nil {
+		msg := "Could not find '" + id + "'"
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(msg))
+	} else {
+		product := Product{}
+		err = dynamodbattribute.UnmarshalMap(result.Item, &product)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to unmarshal Record, %v", err))
 		}
+
+		w.Header().Add("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(product)
+
 	}
 }
 
@@ -43,7 +71,22 @@ func create(w http.ResponseWriter, r *http.Request) {
 
 	var product Product
 	json.Unmarshal(requestBody, &product)
-	Products = append(Products, product)
+
+	av, err := dynamodbattribute.MarshalMap(product)
+	if err != nil {
+		log.Fatalf("Got error marshalling new product item: %s", err)
+	}
+
+	input := &dynamodb.PutItemInput{
+		Item:      av,
+		TableName: aws.String(tableName),
+	}
+
+	_, err = svc.PutItem(input)
+	if err != nil {
+		log.Fatalf("Got error calling PutItem: %s", err)
+	}
+
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(product)
 }
@@ -74,6 +117,13 @@ func init() {
 	log.Println("init x-ray configudaration")
 	s, _ := sampling.NewCentralizedStrategyWithFilePath("rules.json")
 	xray.Configure(xray.Config{SamplingStrategy: s})
+
+	log.Println("init dynamodb")
+	// config inside EC2
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}))
+	svc = dynamodb.New(sess)
 	log.Println("end of init")
 }
 
