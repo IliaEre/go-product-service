@@ -1,9 +1,7 @@
 package main
 
 type Product struct {
-	Id          int64  `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"desc"`
+	Id          string `json:"Id"`
+	Name        string `json:"Name"`
+	Description string `json:"Desc"`
 }
-
-var Products []Product

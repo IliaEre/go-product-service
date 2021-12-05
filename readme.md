@@ -1,5 +1,7 @@
 Simple service for AWS tutorial 
 
+### version 0.0.3
+
 ### how to run?
 > go run cmd/main.go
 
@@ -22,3 +24,5 @@ Simple service for AWS tutorial
 1. [code syntax](https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html#build-spec-ref-syntax)
 2. [build go application](https://dev.classmethod.jp/articles/building-go-project-in-codebuild/)i
 3. [tutorial](https://tutorialedge.net/golang/creating-restful-api-with-golang/)
+4. [DynamoDb and go](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/dynamo-example-scan-table-item.html)  
+5. [DynamoDb create table](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/dynamo-example-load-table-items-from-json.html)  
