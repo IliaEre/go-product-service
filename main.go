@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"github.com/aws/aws-xray-sdk-go/strategy/sampling"
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/gorilla/mux"
@@ -57,33 +58,41 @@ func findOne(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	log.Println("Try to find product with id: ", id)
 
-	result, err := svc.GetItem(&dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
-		Key: map[string]*dynamodb.AttributeValue{
-			"Id": {
-				N: aws.String(id),
-			},
-		},
-	})
-
+	filt := expression.Name("Id").Equal(expression.Value(id))
+	proj := expression.NamesList(expression.Name("Id"), expression.Name("Name"), expression.Name("Description"))
+	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
 	if err != nil {
-		log.Fatalf("Got error calling GetItem: %s", err)
+		log.Fatalf("Got error building expression: %s", err)
 	}
 
-	if result.Item == nil {
-		msg := "Could not find '" + id + "'"
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(msg))
-	} else {
+	params := &dynamodb.ScanInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		ProjectionExpression:      expr.Projection(),
+		TableName:                 aws.String(tableName),
+	}
+
+	result, err := svc.Scan(params)
+	if err != nil {
+		log.Fatalf("Query API call failed: %s", err)
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	var resultSet []Product
+
+	for _, i := range result.Items {
 		product := Product{}
-		err = dynamodbattribute.UnmarshalMap(result.Item, &product)
-		if err != nil {
-			panic(fmt.Sprintf("Failed to unmarshal Record, %v", err))
-		}
+		err = dynamodbattribute.UnmarshalMap(i, &product)
 
-		w.Header().Add("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(product)
+		if err != nil {
+			log.Fatalf("Got error unmarshalling: %s", err)
+		}
+		resultSet = append(resultSet, product)
+
 	}
+
+	json.NewEncoder(w).Encode(resultSet)
 }
 
 func create(w http.ResponseWriter, r *http.Request) {
