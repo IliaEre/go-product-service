@@ -62,7 +62,8 @@ func findOne(w http.ResponseWriter, r *http.Request) {
 	proj := expression.NamesList(expression.Name("Id"), expression.Name("Name"), expression.Name("Description"))
 	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
 	if err != nil {
-		log.Fatalf("Got error building expression: %s", err)
+		message := "Got error building expression:"
+		handeException(w, message, http.StatusInternalServerError, err)
 	}
 
 	params := &dynamodb.ScanInput{
@@ -75,7 +76,8 @@ func findOne(w http.ResponseWriter, r *http.Request) {
 
 	result, err := svc.Scan(params)
 	if err != nil {
-		log.Fatalf("Query API call failed: %s", err)
+		message := "Query API call failed:"
+		handeException(w, message, http.StatusInternalServerError, err)
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -86,10 +88,10 @@ func findOne(w http.ResponseWriter, r *http.Request) {
 		err = dynamodbattribute.UnmarshalMap(i, &product)
 
 		if err != nil {
-			log.Fatalf("Got error unmarshalling: %s", err)
+			message := "Got error unmarshalling:"
+			handeException(w, message, http.StatusInternalServerError, err)
 		}
 		resultSet = append(resultSet, product)
-
 	}
 
 	json.NewEncoder(w).Encode(resultSet)
@@ -106,9 +108,8 @@ func create(w http.ResponseWriter, r *http.Request) {
 
 	av, err := dynamodbattribute.MarshalMap(product)
 	if err != nil {
-		message := "Got error marshalling new product item: %s"
-		log.Println(message, err)
-		w.Write([]byte(message))
+		message := "Got error marshalling new product item:"
+		handeException(w, message, http.StatusInternalServerError, err)
 	}
 	log.Println("Product:", product)
 
@@ -119,9 +120,8 @@ func create(w http.ResponseWriter, r *http.Request) {
 
 	_, err = svc.PutItem(input)
 	if err != nil {
-		message := "Got error calling PutItem: %s"
-		log.Println(message, err)
-		w.Write([]byte(message))
+		message := "Got error calling PutItem:"
+		handeException(w, message, http.StatusInternalServerError, err)
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -160,4 +160,10 @@ func init() {
 func main() {
 	log.Println("init hander and start server")
 	handleRequests()
+}
+
+func handeException(w http.ResponseWriter, message string, code int, err error) {
+	w.WriteHeader(code)
+	log.Println(message, err)
+	w.Write([]byte(message))
 }
