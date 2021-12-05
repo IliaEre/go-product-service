@@ -23,34 +23,37 @@ var svc *dynamodb.DynamoDB
 var tableName = "Products"
 
 func findAll(w http.ResponseWriter, r *http.Request) {
-	out, err := svc.Query(&dynamodb.QueryInput{
-		TableName: aws.String(tableName),
-	})
+	filt := expression.Name("Id").AttributeExists()
+
+	expr, err := expression.NewBuilder().WithFilter(filt).Build()
 	if err != nil {
-		message := "Failed to find products:"
+		handeException(w, "problem...", http.StatusInternalServerError, err)
+	}
+
+	input := &dynamodb.ScanInput{
+		TableName:                 aws.String(tableName),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+	}
+
+	result, err := svc.Scan(input)
+	if err != nil {
+		handeException(w, "problem...", http.StatusInternalServerError, err)
+	}
+
+	if len(result.Items) == 0 {
+		handeException(w, "Not found", http.StatusNotFound, err)
+	}
+
+	products := []Product{}
+	if err := dynamodbattribute.UnmarshalListOfMaps(result.Items, &products); err != nil {
+		message := "Got error unmarshalling:"
 		handeException(w, message, http.StatusInternalServerError, err)
 	}
 
-	if out != nil {
-		w.Header().Add("Content-Type", "application/json")
-		var resultSet []Product
-		for _, element := range out.Items {
-			product := Product{}
-			err = dynamodbattribute.UnmarshalMap(element, &product)
-
-			if err != nil {
-				message := "Got error unmarshalling:"
-				handeException(w, message, http.StatusInternalServerError, err)
-			}
-			resultSet = append(resultSet, product)
-		}
-
-		json.NewEncoder(w).Encode(resultSet)
-
-	} else {
-		message := "Could not find products"
-		handeException(w, message, http.StatusNotFound, err)
-	}
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(products)
 }
 
 func findOne(w http.ResponseWriter, r *http.Request) {
