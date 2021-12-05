@@ -23,12 +23,12 @@ var svc *dynamodb.DynamoDB
 var tableName = "Products"
 
 func findAll(w http.ResponseWriter, r *http.Request) {
-
 	out, err := svc.Query(&dynamodb.QueryInput{
 		TableName: aws.String(tableName),
 	})
 	if err != nil {
-		log.Fatalln("Failed to find products")
+		message := "Failed to find products:"
+		handeException(w, message, http.StatusInternalServerError, err)
 	}
 
 	if out != nil {
@@ -39,7 +39,8 @@ func findAll(w http.ResponseWriter, r *http.Request) {
 			err = dynamodbattribute.UnmarshalMap(element, &product)
 
 			if err != nil {
-				log.Fatalf("Got error unmarshalling: %s", err)
+				message := "Got error unmarshalling:"
+				handeException(w, message, http.StatusInternalServerError, err)
 			}
 			resultSet = append(resultSet, product)
 		}
@@ -47,9 +48,8 @@ func findAll(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(resultSet)
 
 	} else {
-		msg := "Could not find products"
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(msg))
+		message := "Could not find products"
+		handeException(w, message, http.StatusNotFound, err)
 	}
 }
 
