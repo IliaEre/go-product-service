@@ -1,7 +1,12 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"flag"
+	"os"
+	"os/signal"
+	"time"
 
 	"fmt"
 	"io/ioutil"
@@ -131,7 +136,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(product)
 }
 
-func handleRequests() {
+func initHandlers() *http.Server {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	myRouter.Use(otelmux.Middleware("my-api"))
 	xraySegment := xray.NewFixedSegmentNamer("aws-go-service")
@@ -144,7 +149,14 @@ func handleRequests() {
 	myRouter.Handle("/product/all", xray.Handler(xraySegment, http.HandlerFunc(findAll)))
 	myRouter.Handle("/product/{id}", xray.Handler(xraySegment, http.HandlerFunc(findOne)))
 	myRouter.Handle("/product/{id}/add", xray.Handler(xraySegment, http.HandlerFunc(create)))
-	http.ListenAndServe(":8082", myRouter)
+
+	srv := &http.Server{
+		Handler:      myRouter,
+		Addr:         "127.0.0.1:8083",
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+	return srv
 }
 
 func init() {
@@ -161,11 +173,32 @@ func init() {
 }
 
 func main() {
+	var wait time.Duration
+	flag.DurationVar(&wait, "graceful-timeout", time.Second*15,
+		"the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
+	flag.Parse()
+
 	log.Println("init hander and start server")
-	handleRequests()
+	srv := initHandlers()
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			log.Println(err)
+		}
+	}()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	<-c
+
+	ctx, cancel := context.WithTimeout(context.Background(), wait)
+	defer cancel()
+	srv.Shutdown(ctx)
+	log.Println("shutting down")
+	os.Exit(0)
 }
 
 func handeException(w http.ResponseWriter, message string, code int, err error) {
+	w.Header().Set("Content-Type", "application/text")
 	w.WriteHeader(code)
 	log.Println(message, err)
 	w.Write([]byte(message))
