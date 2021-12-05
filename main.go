@@ -110,6 +110,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 		log.Println(message, err)
 		w.Write([]byte(message))
 	}
+	log.Println("Product:", product)
 
 	input := &dynamodb.PutItemInput{
 		Item:      av,
