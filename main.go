@@ -106,7 +106,9 @@ func create(w http.ResponseWriter, r *http.Request) {
 
 	av, err := dynamodbattribute.MarshalMap(product)
 	if err != nil {
-		log.Fatalf("Got error marshalling new product item: %s", err)
+		message := "Got error marshalling new product item: %s"
+		log.Println(message, err)
+		w.Write([]byte(message))
 	}
 
 	input := &dynamodb.PutItemInput{
@@ -116,7 +118,9 @@ func create(w http.ResponseWriter, r *http.Request) {
 
 	_, err = svc.PutItem(input)
 	if err != nil {
-		log.Fatalf("Got error calling PutItem: %s", err)
+		message := "Got error calling PutItem: %s"
+		log.Println(message, err)
+		w.Write([]byte(message))
 	}
 
 	w.Header().Add("Content-Type", "application/json")
