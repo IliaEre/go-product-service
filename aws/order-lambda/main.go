@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/sns"
 
 	"encoding/json"
-	"fmt"
 	"os"
 )
 
