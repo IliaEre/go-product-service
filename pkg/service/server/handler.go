@@ -5,12 +5,14 @@ import (
 	"net/http"
 	"time"
 
+	svs "aws-school-service/pkg/service"
+
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/gorilla/mux"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 )
 
-func initHandlers() *http.Server {
+func InitHandlers() *http.Server {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	myRouter.Use(otelmux.Middleware("my-api"))
 	xraySegment := xray.NewFixedSegmentNamer("aws-go-service")
@@ -20,9 +22,9 @@ func initHandlers() *http.Server {
 			json.NewEncoder(w).Encode(map[string]interface{}{"ok": true})
 		})))
 
-	myRouter.Handle("/product/all", xray.Handler(xraySegment, http.HandlerFunc(findAll)))
-	myRouter.Handle("/product/{id}", xray.Handler(xraySegment, http.HandlerFunc(findOne)))
-	myRouter.Handle("/product/{id}/add", xray.Handler(xraySegment, http.HandlerFunc(create)))
+	myRouter.Handle("/product/all", xray.Handler(xraySegment, http.HandlerFunc(svs.FindAll)))
+	myRouter.Handle("/product/{id}", xray.Handler(xraySegment, http.HandlerFunc(svs.FindOne)))
+	myRouter.Handle("/product/{id}/add", xray.Handler(xraySegment, http.HandlerFunc(svs.Create)))
 
 	srv := &http.Server{
 		Handler:      myRouter,

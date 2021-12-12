@@ -8,22 +8,17 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/session"
+	a "aws-school-service/pkg/service/aws"
+	srv "aws-school-service/pkg/service/server"
+
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-xray-sdk-go/strategy/sampling"
-	"github.com/aws/aws-xray-sdk-go/xray"
 )
 
-func init() {
-	log.Println("init x-ray configudaration")
-	s, _ := sampling.NewCentralizedStrategyWithFilePath("rules.json")
-	xray.Configure(xray.Config{SamplingStrategy: s})
+var svc *dynamodb.DynamoDB // TODO: to config go file
 
-	log.Println("init dynamodb")
-	sess := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-	}))
-	svc = dynamodb.New(sess)
+func init() {
+	a.InitXrayConfig()
+	svc = a.CreateConnection()
 	log.Println("end of init")
 }
 
@@ -34,7 +29,7 @@ func main() {
 	flag.Parse()
 
 	log.Println("init hander and start server")
-	srv := initHandlers()
+	srv := srv.InitHandlers()
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
 			log.Println(err)
