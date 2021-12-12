@@ -9,16 +9,12 @@ import (
 	"time"
 
 	a "aws-school-service/pkg/service/aws"
-	srv "aws-school-service/pkg/service/server"
-
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	srv "aws-school-service/pkg/service/handler"
+	service "aws-school-service/pkg/service/server"
 )
-
-var svc *dynamodb.DynamoDB // TODO: to config go file
 
 func init() {
 	a.InitXrayConfig()
-	svc = a.CreateConnection()
 	log.Println("end of init")
 }
 
@@ -29,7 +25,8 @@ func main() {
 	flag.Parse()
 
 	log.Println("init hander and start server")
-	srv := srv.InitHandlers()
+	se := service.ProductService{}
+	srv := srv.InitHandlers(&se)
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
 			log.Println(err)

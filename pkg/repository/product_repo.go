@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"aws-school-service/pgk/service/aws"
+	"aws-school-service/pkg/service/aws"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
