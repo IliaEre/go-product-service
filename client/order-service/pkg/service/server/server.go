@@ -15,6 +15,7 @@ import (
 )
 
 var (
+	// YOU SHOULD CHANGE IT WITH CONFIG
 	topic = "aws_test_orders_topic"
 )
 
