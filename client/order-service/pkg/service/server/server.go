@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	topic = "orders"
+	topic = "aws_test_orders_topic"
 )
 
 type OrderService struct {
