@@ -1,6 +1,6 @@
 Simple service for AWS tutorial 
 
-### version 0.0.3-SNAPSHOT
+### version 0.0.4-SNAPSHOT
 
 Sample with:
 1) XRay  
@@ -9,6 +9,14 @@ Sample with:
 
 ### how to run?
 > go run cmd/sever/main.go
+
+--- 
+
+TODO list:
+1) refactoring main service and remove db layer
+2) tests
+
+--- 
 
 ### AWS XRAY
 0) I must add your credential for AWS XRAY [intstuction](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#specifying-credentials) and I higly recommend using new IAM role and user
