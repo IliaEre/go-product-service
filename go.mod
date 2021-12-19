@@ -5,6 +5,7 @@ go 1.17
 require github.com/aws/aws-xray-sdk-go v1.6.0
 
 require (
+	github.com/aws/aws-lambda-go v1.27.1 // indirect
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.27.0 // indirect
