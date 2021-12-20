@@ -5,7 +5,8 @@ Simple service for AWS tutorial
 Sample with:
 1) XRay  
 2) DynamoDB  
-3) API GW + lambda and SNS (extra material)   
+3) API lambda and SNS (extra material)
+4) SNS and email sender   
 
 ### how to run?
 > go run cmd/sever/main.go

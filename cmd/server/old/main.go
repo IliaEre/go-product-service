@@ -1,6 +1,7 @@
 package main
 
 import (
+	"aws-school-service/pkg/domain"
 	"context"
 	"encoding/json"
 	"flag"
@@ -51,7 +52,7 @@ func findAll(w http.ResponseWriter, r *http.Request) {
 		handeException(w, "Not found", http.StatusNotFound, err)
 	}
 
-	products := []Product{}
+	products := []domain.Product{}
 	if err := dynamodbattribute.UnmarshalListOfMaps(result.Items, &products); err != nil {
 		message := "Got error unmarshalling:"
 		handeException(w, message, http.StatusInternalServerError, err)
@@ -89,10 +90,10 @@ func findOne(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Content-Type", "application/json")
-	var resultSet []Product
+	var resultSet []domain.Product
 
 	for _, i := range result.Items {
-		product := Product{}
+		product := domain.Product{}
 		err = dynamodbattribute.UnmarshalMap(i, &product)
 
 		if err != nil {
@@ -111,7 +112,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(requestBody, "Problem with body!")
 	}
 
-	var product Product
+	var product domain.Product
 	json.Unmarshal(requestBody, &product)
 
 	av, err := dynamodbattribute.MarshalMap(product)
