@@ -3,7 +3,6 @@ package service
 import (
 	"aws-school-service/pkg/api"
 	d "aws-school-service/pkg/domain"
-	"fmt"
 	"io/ioutil"
 	"log"
 
@@ -50,15 +49,13 @@ func (s *ProductService) FindAll(w http.ResponseWriter, r *http.Request) {
 
 	products := []d.Product{}
 	if err := dynamodbattribute.UnmarshalListOfMaps(result.Items, &products); err != nil {
-		message := "Got error unmarshalling:"
-		Handle(w, message, http.StatusInternalServerError, err)
+		Handle(w, "Got error unmarshalling:", http.StatusInternalServerError, err)
 	}
 
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(products)
 }
 
-// TODO: remove db
 func (hps *ProductService) FindOne(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -68,8 +65,7 @@ func (hps *ProductService) FindOne(w http.ResponseWriter, r *http.Request) {
 	proj := expression.NamesList(expression.Name("Id"), expression.Name("Name"), expression.Name("Description"))
 	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
 	if err != nil {
-		message := "Got error building expression:"
-		Handle(w, message, http.StatusInternalServerError, err)
+		Handle(w, "Got error building expression:", http.StatusInternalServerError, err)
 	}
 
 	params := &dynamodb.ScanInput{
@@ -82,8 +78,7 @@ func (hps *ProductService) FindOne(w http.ResponseWriter, r *http.Request) {
 
 	result, err := svc.Scan(params)
 	if err != nil {
-		message := "Query API call failed:"
-		Handle(w, message, http.StatusInternalServerError, err)
+		Handle(w, "Query API call failed:", http.StatusInternalServerError, err)
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -94,8 +89,7 @@ func (hps *ProductService) FindOne(w http.ResponseWriter, r *http.Request) {
 		err = dynamodbattribute.UnmarshalMap(i, &product)
 
 		if err != nil {
-			message := "Got error unmarshalling:"
-			Handle(w, message, http.StatusInternalServerError, err)
+			Handle(w, "Got error unmarshalling:", http.StatusInternalServerError, err)
 		}
 		resultSet = append(resultSet, product)
 	}
@@ -103,11 +97,10 @@ func (hps *ProductService) FindOne(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resultSet)
 }
 
-// TODO: remove db
 func (hps *ProductService) Create(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println(requestBody, "Problem with body!")
+		Handle(w, "Problem with body!", http.StatusInternalServerError, err)
 	}
 
 	var product d.Product
@@ -115,8 +108,7 @@ func (hps *ProductService) Create(w http.ResponseWriter, r *http.Request) {
 
 	av, err := dynamodbattribute.MarshalMap(product)
 	if err != nil {
-		message := "Got error marshalling new product item:"
-		Handle(w, message, http.StatusInternalServerError, err)
+		Handle(w, "Got error marshalling new product item:", http.StatusInternalServerError, err)
 	}
 	log.Println("Product:", product)
 
@@ -139,5 +131,5 @@ func Handle(w http.ResponseWriter, message string, code int, err error) {
 	w.Header().Set("Content-Type", "application/text")
 	w.WriteHeader(code)
 	log.Println(message, err)
-	w.Write([]byte(message))
+	http.Error(w, message, code)
 }

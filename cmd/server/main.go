@@ -15,7 +15,6 @@ import (
 
 func init() {
 	a.InitXrayConfig()
-	log.Println("end of init")
 }
 
 func main() {
