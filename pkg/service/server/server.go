@@ -1,7 +1,8 @@
-package handler
+package service
 
 import (
 	"aws-school-service/pkg/service/product"
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -12,10 +13,19 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 )
 
-func InitHandlers(s *product.ProductService) *http.Server {
+var (
+	apiName = "aws-product-service"
+)
+
+type Server struct {
+	ps *product.ProductService
+	ms *http.Server
+}
+
+func NewServer(s *product.ProductService) *Server {
 	myRouter := mux.NewRouter().StrictSlash(true)
-	myRouter.Use(otelmux.Middleware("my-api"))
-	xraySegment := xray.NewFixedSegmentNamer("aws-go-service")
+	myRouter.Use(otelmux.Middleware(apiName))
+	xraySegment := xray.NewFixedSegmentNamer(apiName)
 
 	myRouter.Handle("/api/health", xray.Handler(xraySegment,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -34,5 +44,18 @@ func InitHandlers(s *product.ProductService) *http.Server {
 	}
 
 	log.Printf("Server will be started with address: %s", srv.Addr)
-	return srv
+	return &Server{s, srv}
+}
+
+func (s *Server) Run() {
+
+	go func() {
+		if err := s.ms.ListenAndServe(); err != nil {
+			log.Println(err)
+		}
+	}()
+}
+
+func (s *Server) Shutdown(context context.Context) {
+	s.ms.Shutdown(context)
 }

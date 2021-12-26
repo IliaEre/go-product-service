@@ -8,9 +8,10 @@ import (
 	"os/signal"
 	"time"
 
+	"aws-school-service/pkg/repository"
 	a "aws-school-service/pkg/service/aws"
-	srv "aws-school-service/pkg/service/handler"
-	service "aws-school-service/pkg/service/server"
+	"aws-school-service/pkg/service/product"
+	srv "aws-school-service/pkg/service/server"
 )
 
 func init() {
@@ -24,13 +25,12 @@ func main() {
 	flag.Parse()
 
 	log.Println("init hander and start server")
-	se := service.ProductService{}
-	srv := srv.InitHandlers(&se)
-	go func() {
-		if err := srv.ListenAndServe(); err != nil {
-			log.Println(err)
-		}
-	}()
+
+	repo := repository.NewRepository()
+	srvs := product.NewProductService(repo)
+	s := srv.NewServer(srvs)
+
+	s.Run()
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -38,7 +38,7 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), wait)
 	defer cancel()
-	srv.Shutdown(ctx)
+	s.Shutdown(ctx)
 	log.Println("shutting down")
 	os.Exit(0)
 }

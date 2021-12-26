@@ -1,9 +1,9 @@
 package repository
 
 import (
+	"aws-school-service/pkg/api"
 	"aws-school-service/pkg/domain"
 	a "aws-school-service/pkg/service/aws"
-	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -15,11 +15,12 @@ var Dynamo *dynamodb.DynamoDB
 var TableName = "Products"
 
 type DymanoRepository struct {
-	a.DinamoDbService
+	api.DinamoDbRepository
 }
 
-func CreateConnection() {
+func NewRepository() *DymanoRepository {
 	Dynamo = a.CreateConnection()
+	return &DymanoRepository{}
 }
 
 func (r *DymanoRepository) FindAll() (*dynamodb.ScanOutput, error) {
@@ -77,8 +78,6 @@ func (r *DymanoRepository) Create(product domain.Product) error {
 	if err != nil {
 		return err
 	}
-
-	log.Println("Product:", product)
 
 	input := &dynamodb.PutItemInput{
 		Item:      av,
