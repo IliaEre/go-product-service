@@ -14,13 +14,14 @@ Sample with:
 --- 
 
 TODO list:
-1) refactoring main service and remove db layer
-2) tests
+1) tests
 
 --- 
 
 ### AWS XRAY
-0) I must add your credential for AWS XRAY [intstuction](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#specifying-credentials) and I higly recommend using new IAM role and user
+0) I must add your credential for AWS XRAY [intstuction](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#specifying-credentials) and I higly recommend using new IAM role and user  
+2) Add role for DymanoDb  
+3) SNS role 
 
 
 ## 1.1) you can start app with Docker:  
