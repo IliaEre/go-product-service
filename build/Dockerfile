@@ -10,8 +10,8 @@
 
  COPY *.go ./
 
- RUN go build -o /docker-go-service
+ RUN go build -o /go-product-service
 
- EXPOSE 8082
+ EXPOSE 8083
 
- CMD [ "/docker-go-service" ] 
+ CMD [ "/product-service" ] 
