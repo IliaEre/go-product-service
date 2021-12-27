@@ -48,7 +48,6 @@ func NewServer(s *product.ProductService) *Server {
 }
 
 func (s *Server) Run() {
-
 	go func() {
 		if err := s.ms.ListenAndServe(); err != nil {
 			log.Println(err)

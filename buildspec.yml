@@ -22,7 +22,7 @@ phases:
     on-failure: ABORT
     commands:
       - echo Build started on `date`
-      - go build
+      - go build cmd/server/main.go
   post_build:
     commands:
       - echo Build completed on `date`

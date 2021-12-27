@@ -1,6 +1,6 @@
 Simple service for AWS tutorial 
 
-### version 0.0.4-SNAPSHOT
+### version 0.0.5-SNAPSHOT
 
 Sample with:
 1) XRay  
